@@ -56,9 +56,9 @@ public class Java2PbMessage {
     public String toMesage() {
         StringBuilder output = new StringBuilder();
         output.append("package ").append(packageName).append(";\n\n");
-        output.append("import \"proto/protostuff-default.proto\";\n\n");
+        //output.append("import \"proto/protostuff-default.proto\";\n\n");
         //导入依赖
-        String format = "import \"proto/%s.proto\";\n";
+        String format = "import \"%s.proto\";\n";
         if (!dependencyMessages.isEmpty()) {
             dependencyMessages.forEach(name -> {
                 output.append(String.format(format, name));
@@ -159,45 +159,60 @@ public class Java2PbMessage {
                                 dependencyMessages.add(fieldType);
                             }
 
-                        } else if (normField.getFirst() == RuntimeFieldType.RuntimeMapField ||
-                                normField.getFirst() == RuntimeFieldType.RuntimeObjectField) {
+//                        } else if (normField.getFirst() == RuntimeFieldType.RuntimeMapField ||
+//                                normField.getFirst() == RuntimeFieldType.RuntimeObjectField) {
+//                            Field schemaField = fieldClass.getDeclaredField("schema");
+//                            schemaField.setAccessible(true);
+//                            Schema<?> fieldSchema = (Schema<?>) schemaField.get(field);
+//
+//                            if ("Array".equals(fieldSchema.messageName())){
+//                                Field hsField= fieldSchema.getClass().getDeclaredField("hs");
+//                                hsField.setAccessible(true);
+//                                HasSchema hasSchema = (HasSchema) hsField.get(fieldSchema);
+//                                Field typeClassField= hasSchema.getClass().getDeclaredField("typeClass");
+//                                typeClassField.setAccessible(true);
+//                                Class clazz = (Class) typeClassField.get(hasSchema);
+//                                System.out.println("");
+//                            }
+//
+//                            Pair<RuntimeSchemaType, Class<?>> normSchema = ReflectionUtil.normalizeSchemaClass(fieldSchema.getClass());
+//                            System.out.println("1、"+fieldSchema.messageName());
+//                            System.out.println("2、"+fieldSchema.typeClass());
+//                            System.out.println("3、"+fieldSchema.getClass().getName());
+//                            System.out.println("4、"+fieldSchema.messageFullName());
 
-                            Field schemaField = fieldClass.getDeclaredField("schema");
-                            schemaField.setAccessible(true);
-
-                            Schema<?> fieldSchema = (Schema<?>) schemaField.get(field);
-                            Pair<RuntimeSchemaType, Class<?>> normSchema = ReflectionUtil.normalizeSchemaClass(fieldSchema.getClass());
-                            if (normSchema == null) {
-                                throw new IllegalStateException("unknown schema type " + fieldSchema.getClass());
-                            }
-
-                            switch (normSchema.getFirst()) {
-                                case ArraySchema:
-                                    fieldType = "ArrayObject";
-                                    break;
-                                case ObjectSchema:
-                                    fieldType = "DynamicObject";
-                                    break;
-                                case MapSchema:
-
-                                    Field reflectionField = field.getClass().getDeclaredField("val$f");
-                                    reflectionField.setAccessible(true);
-                                    Field pojoField = (Field) reflectionField.get(field);
-
-                                    Pair<Type, Type> keyValue = ReflectionUtil.getMapGenericTypes(pojoField.getGenericType());
-
-                                    fieldType = getMapFieldType(keyValue);
-                                    break;
-
-                                case PolymorphicEnumSchema:
-                                    fieldType = "EnumObject";
-                                    break;
-                            }
+//
+//                            if (normSchema == null) {
+//                                throw new IllegalStateException("unknown schema type " + fieldSchema.getClass());
+//                            }
+//
+//                            switch (normSchema.getFirst()) {
+//                                case ArraySchema:
+//                                    fieldType = "ArrayObject";
+//                                    break;
+//                                case ObjectSchema:
+//                                    fieldType = "DynamicObject";
+//                                    break;
+//                                case MapSchema:
+//
+//                                    Field reflectionField = field.getClass().getDeclaredField("val$f");
+//                                    reflectionField.setAccessible(true);
+//                                    Field pojoField = (Field) reflectionField.get(field);
+//
+//                                    Pair<Type, Type> keyValue = ReflectionUtil.getMapGenericTypes(pojoField.getGenericType());
+//
+//                                    fieldType = getMapFieldType(keyValue);
+//                                    break;
+//
+//                                case PolymorphicEnumSchema:
+//                                    fieldType = "EnumObject";
+//                                    break;
+//                            }
 
                             //System.out.println(getClassHierarchy(normSchema.getSecond()));
 
                         } else {
-                            throw new IllegalStateException("unknown fieldClass " + field.getClass());
+                            throw new IllegalStateException("field type not support, typeclass=" + schema.typeClass() + ",fieldName=" + field.name);
                         }
                     }
                 } else {
