@@ -55,7 +55,7 @@ public class Java2PbMessage {
 
     public String toMesage() {
         StringBuilder output = new StringBuilder();
-        output.append("package ").append(packageName).append(";\n\n");
+        output.append("package org.alan.chess.proto").append(";\n\n");
         //output.append("import \"proto/protostuff-default.proto\";\n\n");
         //导入依赖
         String format = "import \"%s.proto\";\n";
