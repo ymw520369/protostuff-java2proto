@@ -221,12 +221,16 @@ public class Java2PbMessage {
 
                 message.append("  ");
 
-                if (field.repeated) {
-                    message.append("repeated ");
-                } else {
-                    message.append("optional ");
+                if(field.type == WireFormat.FieldType.ENUM){
+                    message.append("required ");
+                }else{
+                    if (field.repeated) {
+                        message.append("repeated ");
+                    }
+                    else {
+                        message.append("optional ");
+                    }
                 }
-
                 message.append(fieldType).append(" ").append(field.name).append(" = ").append(field.number).append(";\n");
 
             }
