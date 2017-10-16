@@ -12,8 +12,6 @@ import net.webby.protostuff.runtime.RuntimeFieldType;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Created on 2017/6/14.
@@ -21,55 +19,27 @@ import java.util.Set;
  * @author Alan
  * @since 1.0
  */
-public class Java2PbMessage {
+public class Java2Pb {
     /* 协议*/
     public final Schema<?> schema;
-    /* proto pakage*/
-    public String packageName;
-    /* 生成java类的包名*/
-    public String javaPackageName;
-    /* 输出java的类名*/
-    public String outerClassName = null;
-    /* 依赖的其他message*/
-    public Set<String> dependencyMessages = new HashSet<>();
     /* 本类message*/
     public StringBuilder message = new StringBuilder();
 
-    public Java2PbMessage(Schema<?> schema, String pkg) {
+    public Java2Pb(Schema<?> schema, String pkg) {
         if (!(schema instanceof RuntimeSchema)) {
             throw new IllegalArgumentException("schema instance must be a RuntimeSchema");
         }
 
         this.schema = schema;
-        Class<?> typeClass = schema.typeClass();
-        this.javaPackageName = typeClass.getPackage().getName();
-        this.outerClassName = typeClass.getSimpleName();
-        this.packageName = pkg;
     }
 
-    public Java2PbMessage gen() {
+    public Java2Pb gen() {
         generateInternal();
         return this;
     }
 
     public String toMesage() {
-        StringBuilder output = new StringBuilder();
-        output.append("package ").append(packageName).append(";\n\n");
-        //output.append("import \"proto/protostuff-default.proto\";\n\n");
-        //导入依赖
-        String format = "import \"%s.proto\";\n";
-        if (!dependencyMessages.isEmpty()) {
-            dependencyMessages.forEach(name -> {
-                output.append(String.format(format, name));
-            });
-        }
-        output.append("\noption java_package = \"").append(javaPackageName).append("\";\n");
-        if (outerClassName != null) {
-            output.append("option java_outer_classname=\"").append(outerClassName).append("\";\n");
-        }
-        output.append("\n");
-        output.append(this.message);
-        return output.toString();
+        return message.toString();
     }
 
     protected void generateInternal() {
@@ -119,17 +89,12 @@ public class Java2PbMessage {
                     reflectionField.setAccessible(true);
                     EnumIO enumIO = (EnumIO) reflectionField.get(field);
                     fieldType = enumIO.enumClass.getSimpleName();
-                    dependencyMessages.add(fieldType);
                 } else if (field.type == WireFormat.FieldType.MESSAGE) {
                     if (field.repeated) {
                         Field typeClassField = field.getClass().getField("typeClass");
                         typeClassField.setAccessible(true);
                         Class<?> tmpClass = (Class<?>) typeClassField.get(field);
                         fieldType = tmpClass.getSimpleName();
-                        //将依赖的部分添加在此处
-                        if (!dependencyMessages.contains(fieldType)) {
-                            dependencyMessages.add(fieldType);
-                        }
                     } else {
                         Pair<RuntimeFieldType, Class<?>> normField = ReflectionUtil.normalizeFieldClass(field);
                         if (normField == null) {
@@ -152,11 +117,6 @@ public class Java2PbMessage {
                             HasSchema<?> hasSchema = (HasSchema<?>) hasSchemaField.get(field);
                             Schema<?> fieldSchema = hasSchema.getSchema();
                             fieldType = fieldSchema.messageName();
-
-                            //将依赖的部分添加在此处
-                            if (!dependencyMessages.contains(fieldType)) {
-                                dependencyMessages.add(fieldType);
-                            }
 
 //                        } else if (normField.getFirst() == RuntimeFieldType.RuntimeMapField ||
 //                                normField.getFirst() == RuntimeFieldType.RuntimeObjectField) {

@@ -1,53 +1,41 @@
 package org.alan.gen;
 
 import com.dyuproject.protostuff.Schema;
-import com.dyuproject.protostuff.runtime.DefaultIdStrategy;
-import com.dyuproject.protostuff.runtime.RuntimeEnv;
 import com.dyuproject.protostuff.runtime.RuntimeSchema;
 import org.alan.utils.ClassUtils;
 import org.alan.utils.FileHelper;
 
 import java.lang.annotation.Annotation;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * Created on 2017/7/26.
+ * Created on 2017/8/31.
  *
  * @author Alan
  * @since 1.0
  */
-public class Main {
+public class ToOneFile {
     public static void main(String[] args) throws ClassNotFoundException {
         String searchPackage = args[0];
         String genToDir = args[1];
         String clazzName = args[2];
         String pkg = args[3];
-        DefaultIdStrategy idStrategy = (DefaultIdStrategy) RuntimeEnv.ID_STRATEGY;
-        idStrategy.registerDelegate(new AtomicLongDelegate());
         java2PbMessage(searchPackage, pkg, genToDir, Class.forName(clazzName).asSubclass(Annotation.class));
     }
 
     public static void java2PbMessage(String searchPackage, String pkg, String genToDir, Class<? extends Annotation> protoClazz) {
-        Map<String, Java2PbMessage> messages = new HashMap<>();
         String dir = genToDir;
         Set<Class<?>> classes = ClassUtils.getAllClassByAnnotation(searchPackage, protoClazz);
+        StringBuilder sb = new StringBuilder();
+        String fileName = dir + "/Protocol.proto";
         classes.forEach(clazz -> {
             System.out.println(clazz);
             Schema<?> schema = RuntimeSchema.getSchema(clazz);
-            Java2PbMessage pbGen = new Java2PbMessage(schema,pkg).gen();
-            messages.put(clazz.getSimpleName(), pbGen);
-            String fileName = dir + "/" + clazz.getSimpleName() + ".proto";
-            System.out.println(fileName);
+            Java2Pb pbGen = new Java2Pb(schema, pkg).gen();
             String content = pbGen.toMesage();
-            FileHelper.saveFile(fileName, content, false);
+            sb.append(content);
         });
+        FileHelper.saveFile(fileName, sb.toString(), false);
 
-        messages.values().forEach(pbGen -> pbGen.dependencyMessages.forEach(s -> {
-            if (!messages.containsKey(s)) {
-                System.err.println("找不到依赖消息,message=" + pbGen.outerClassName + ",dependencyMessage=" + s);
-            }
-        }));
     }
 }
